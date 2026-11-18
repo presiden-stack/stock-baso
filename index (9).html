@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#12352d"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><title>StokBasoku</title>
+<style>
+:root{--g:#12352d;--g2:#23634f;--bg:#f3f7f4;--line:#e1e9e4;--muted:#718078}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:#17231e}
+header{background:var(--g);color:white;padding:20px 17px 24px;border-radius:0 0 23px 23px}.wrap{max-width:720px;margin:auto;padding:0 15px}
+.brand{font-size:12px;letter-spacing:.13em;color:#bdd9cd;font-weight:800}h1{font-size:25px;margin:7px 0 4px}.sub{font-size:13px;color:#d1e2da;margin:0}
+main{padding:17px 0 94px}.panel,.stat{background:white;border:1px solid var(--line);border-radius:16px;padding:15px;margin-bottom:13px}
+h2{font-size:16px;margin:0 0 13px}.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:13px}.stat small{color:var(--muted);font-size:12px}.stat strong{display:block;font-size:23px;color:var(--g);margin-top:4px}
+label{display:block;font-size:13px;font-weight:700;margin:12px 0 6px}input[type=text],input[type=number]{width:100%;padding:12px;border:1px solid #d3ded7;border-radius:11px;font-size:15px}
+.photo{border:1.5px dashed #b9c9bf;background:#f9fbfa;padding:12px;border-radius:13px}.photo input{width:100%;font-size:12px;margin-top:8px}.preview{display:none;width:100%;max-height:190px;object-fit:contain;border-radius:9px;margin-top:9px;background:#edf2ef}
+.hint{font-size:11px;color:var(--muted);line-height:1.5;margin:6px 0 0}button{border:0;border-radius:11px;padding:12px 15px;font-size:14px;font-weight:750;cursor:pointer}.primary{background:var(--g);color:white;width:100%;margin-top:15px}.secondary{background:#edf3ef;color:var(--g)}.danger{background:#fff0ef;color:#a52b23}
+.hidden{display:none!important}.notice{padding:11px;border-radius:10px;background:#eaf6ee;color:#17633a;font-size:13px;margin-top:11px;display:none}
+.session{background:#eaf4ee;border:1px solid #cfe1d5;border-radius:12px;padding:12px;font-size:13px;margin-bottom:13px}.session strong{display:block;color:var(--g);font-size:15px}
+.scan{border:1px solid var(--line);border-radius:13px;padding:12px;margin-top:11px}.scan img{width:100%;max-height:160px;object-fit:contain;border-radius:8px;background:#edf2ef}.scan-head{display:flex;justify-content:space-between;gap:10px;align-items:center}.scan-head strong{font-size:14px}.scan small{color:var(--muted);font-size:12px}
+.bottom{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--line);display:flex;justify-content:center;z-index:5;padding:7px 8px calc(7px + env(safe-area-inset-bottom))}.nav{width:min(720px,100%);display:grid;grid-template-columns:repeat(6,1fr);gap:5px}.nav button{background:transparent;color:#6c7a72;font-size:10px;padding:7px 1px}.nav button.active{background:#eaf3ed;color:var(--g)}.nav span{display:block;font-size:19px;margin-bottom:2px}
+.toolbar{display:flex;justify-content:space-between;align-items:center;gap:8px}.empty{color:var(--muted);font-size:13px;padding:8px 0}.row{display:flex;gap:9px;align-items:center}.row>*{flex:1}
+select{width:100%;padding:12px;border:1px solid #d3ded7;border-radius:11px;font-size:15px}table{width:100%;border-collapse:collapse;font-size:13px}td,th{padding:5px 3px;border-bottom:1px solid var(--line);text-align:left}td input{width:100%;padding:8px;font-size:14px}details{margin-top:8px;font-size:13px}.rec{font-size:12px;margin:6px 0;line-height:1.5}
+input[type=password]{width:100%;padding:12px;border:1px solid #d3ded7;border-radius:11px;font-size:15px}@media print{header,.bottom,footer,.noprint{display:none!important}body{background:#fff}}
+footer{text-align:center;color:var(--muted);font-size:11px;padding:8px}
+@media(max-width:420px){h1{font-size:22px}.stat strong{font-size:20px}}
+</style>
+<!-- OCR dijalankan di perangkat melalui Tesseract.js; perlu koneksi internet saat pertama digunakan -->
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+</head>
+<body>
+<header><div class="wrap"><div class="brand">STOKBASOKU</div><h1>Kontrol Pengambilan Baso</h1><p class="sub">Buka transaksi sekali, lalu foto setiap label barang yang diambil.</p></div></header>
+<main class="wrap">
+<section id="page-home">
+ <div class="stats"><div class="stat"><small>Transaksi tersimpan</small><strong id="statTransactions">0</strong></div><div class="stat"><small>Total baso tercatat keluar</small><strong id="statPieces">0 pcs</strong></div></div>
+ <div id="sessionStatus" class="session"><strong>Belum ada transaksi terbuka</strong>Masukkan nama pengambil dan foto tangan untuk memulai.</div>
+ <div class="panel">
+  <h2>1. Buka transaksi pengambilan</h2>
+  <label for="taker">Nama pengambil</label><input id="taker" type="text" placeholder="Masukkan nama lengkap">
+  <label>Foto tangan pengambil</label>
+  <div class="photo"><input id="hand" type="file" accept="image/*" capture="environment"><img id="handPrev" class="preview" alt="Foto tangan"><p class="hint">Foto tangan menjadi bukti pembuka transaksi. Tidak perlu foto ulang untuk setiap label.</p></div>
+  <button class="primary" id="openSession">Buka transaksi</button><div id="openNotice" class="notice"></div>
+ </div>
+ <div class="panel">
+  <h2>2. Foto label setiap barang yang diambil</h2>
+  <p class="hint" style="margin:0 0 10px">Setelah transaksi terbuka, foto label baso, lalu isi nama baso dan jumlah PCS.</p>
+  <div id="closedMsg" class="empty">Buka transaksi terlebih dahulu untuk mulai memindai label.</div>
+  <div id="scanArea" class="hidden">
+   <label>Foto label baso</label><div class="photo"><input id="label" type="file" accept="image/*" capture="environment"><img id="labelPrev" class="preview" alt="Foto label"></div>
+      <label for="readName">Nama baso</label><input id="readName" type="text" list="prodList" placeholder="Contoh: Urat Kriwil"><datalist id="prodList"></datalist>
+   <div class="row"><div><label for="readQty">Jumlah (PCS)</label><input id="readQty" type="number" min="1" step="1" placeholder="Contoh: 25"></div><div style="padding-top:25px"><button class="secondary" id="saveLabel" style="width:100%">Simpan label</button></div></div>
+   <div id="scanNotice" class="notice"></div>
+  </div>
+ </div>
+ <div class="panel"><div class="toolbar"><h2 style="margin:0">Barang dalam transaksi ini</h2><button class="secondary" id="closeSession">Tutup transaksi</button></div><div id="currentScans" class="empty">Belum ada label tersimpan.</div></div>
+</section>
+<section id="page-history" class="hidden">
+ <div class="panel"><div class="toolbar"><h2 style="margin:0">Riwayat transaksi</h2><button class="secondary" id="export">Unduh CSV</button></div><div id="historyList" style="margin-top:10px" class="empty">Belum ada transaksi.</div></div>
+</section>
+<section id="page-help" class="hidden">
+ <div class="panel"><h2>Cara menggunakan</h2><ol style="padding-left:19px;font-size:13px;line-height:1.8"><li>Masukkan nama pengambil.</li><li>Foto tangan pengambil, lalu tekan <b>Buka transaksi</b>.</li><li>Foto label baso yang diambil.</li><li>Isi nama baso dan jumlah PCS sesuai label.</li><li>Tekan <b>Simpan label</b>. Ulangi untuk label berikutnya.</li><li>Tekan <b>Tutup transaksi</b> setelah selesai.</li></ol><p class="hint">Data disimpan pada browser/perangkat ini. Gunakan Unduh CSV untuk membuat salinan laporan. Foto tersimpan di perangkat/browser yang sama.</p></div>
+</section>
+<section id="page-masuk" class="hidden"><div class="panel"><h2>Barang masuk</h2><label>Produk</label><select id="inProd"></select><label>Jumlah (PCS)</label><input id="inQty" type="number" min="1"><label>Petugas</label><input id="inBy" type="text"><button class="primary" id="inSave">Simpan barang masuk</button><div id="inNotice" class="notice"></div></div><div class="panel"><h2>Barang masuk terakhir</h2><div id="inList" class="empty"></div></div></section>
+<section id="page-closing" class="hidden">
+ <div class="panel" id="clStart"><h2>Mulai Closing</h2><label>Nama lengkap petugas</label><input id="clName" type="text"><label>Foto tangan (kamera)</label><div class="photo"><input id="clHand" type="file" accept="image/*" capture="environment"></div><button class="primary" id="clOpen">MULAI CLOSING</button></div>
+ <div class="panel hidden" id="clWork"><div id="clHead" class="session"></div><div class="photo" style="margin-top:10px"><label style="margin:0">Foto tabel tulisan tangan</label><input id="clTable" type="file" accept="image/*" capture="environment"><button class="secondary" id="clOcr" style="width:100%;margin-top:8px">Baca tabel otomatis</button><div id="clOcrSt" class="hint"></div></div><div id="clGrid"></div><div class="row" style="margin-top:10px"><button class="secondary" id="clCheck">Periksa ulang</button><button class="secondary" id="clDraft">Simpan draft</button></div><div id="clResult"></div><button class="primary hidden" id="clFinish">SELESAIKAN CLOSING</button></div>
+ <div class="panel"><h2>Riwayat Closing</h2><div id="clStats" class="hint"></div><div id="clHist" class="empty"></div></div>
+</section>
+<section id="page-laporan" class="hidden"><div class="panel"><h2>Laporan</h2><div class="noprint"><label>Periode</label><select id="rpPer"><option value="1">Harian (hari ini)</option><option value="7">Mingguan (7 hari)</option><option value="30">Bulanan (30 hari)</option></select><div class="row" style="margin-top:10px"><button class="secondary" id="rpRun">Tampilkan</button><button class="secondary" id="rpCsv">CSV</button><button class="secondary" id="rpXls">Excel</button><button class="secondary" id="rpPdf">PDF</button></div></div><div id="rpOut" style="margin-top:12px"></div></div>
+<div class="panel noprint"><h2>Asisten StokBasoku</h2><input id="asQ" type="text" placeholder="Contoh: Produk mana yang ada selisih?"><button class="primary" id="asGo">Tanya</button><div id="asA" class="rec"></div></div>
+<div class="panel adm hidden noprint"><h2>Audit log (admin)</h2><div id="auList" class="empty"></div></div></section>
+</main>
+<nav class="bottom"><div class="nav"><button class="active" data-page="home"><span>⌂</span>Beranda</button><button data-page="masuk"><span>⇩</span>Masuk</button><button data-page="closing"><span>✔</span>Closing</button><button data-page="history"><span>▤</span>Riwayat</button><button data-page="laporan"><span>▦</span>Laporan</button><button data-page="help"><span>ⓘ</span>Panduan</button></div></nav>
+<footer>StokBasoku · Catatan pengambilan barang<br><span id="syncStat">Cloud: menunggu</span></footer>
+<script>
+const DB='stokbasoku_v2',STORE='sessions';let db,active=null,pendingPhoto=null;
+const $=id=>document.getElementById(id);
+const SB_URL='https://hwmodplywbefvhjxklct.supabase.co',SB_KEY='sb_publishable_k-IuDvf9fkZYKpV7KWJyYw_i8zTBB75',BUCKET='stokbasoku';
+const sb=window.supabase?window.supabase.createClient(SB_URL,SB_KEY):null;
+function setSync(t){$('syncStat').textContent=t}
+async function up(path,dataUrl){const blob=await(await fetch(dataUrl)).blob();const {error}=await sb.storage.from(BUCKET).upload(path,blob,{upsert:true,contentType:blob.type||'image/jpeg'});if(error)throw error;return sb.storage.from(BUCKET).getPublicUrl(path).data.publicUrl}
+async function sync(s){if(!sb){setSync('Cloud: tidak tersedia (cek internet)');return}try{setSync('Cloud: menyinkronkan…');s.uuid=s.uuid||crypto.randomUUID();if(!s.handUrl)s.handUrl=await up(s.uuid+'/tangan',s.handPhoto);for(let i=0;i<s.scans.length;i++){const x=s.scans[i];if(!x.url)x.url=await up(s.uuid+'/label-'+i,x.photo)}const {error}=await sb.from('sessions').upsert({id:s.uuid,taker:s.taker,hand_photo:s.handUrl,opened_at:s.openedAt,closed_at:s.closedAt,scans:s.scans.map(x=>({name:x.name,qty:x.qty,photo:x.url,at:x.at}))});if(error)throw error;s.synced=true;await put(s);setSync('Cloud: tersimpan ✓')}catch(e){console.error(e);setSync('Cloud: gagal, akan dicoba lagi')}}
+let syncChain=Promise.resolve();const syncQ=s=>syncChain=syncChain.then(()=>sync(s));
+async function resync(){if(!db)return;(await getAll()).filter(s=>s.synced!==true).forEach(syncQ)}
+window.addEventListener('online',resync);
+function openDB(){return new Promise((res,rej)=>{let r=indexedDB.open(DB,1);r.onupgradeneeded=()=>r.result.createObjectStore(STORE,{keyPath:'id',autoIncrement:true});r.onsuccess=()=>{db=r.result;res()};r.onerror=()=>rej(r.error)})}
+function store(mode='readonly'){return db.transaction(STORE,mode).objectStore(STORE)}
+function getAll(){return new Promise((res,rej)=>{let r=store().getAll();r.onsuccess=()=>res(r.result.sort((a,b)=>b.id-a.id));r.onerror=()=>rej(r.error)})}
+function put(s){return new Promise((res,rej)=>{let r=store('readwrite').put(s);r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)})}
+function fileData(f){return new Promise((res,rej)=>{let r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsDataURL(f)})}
+function preview(inp,img){inp.addEventListener('change',()=>{let f=inp.files[0];if(!f)return;img.src=URL.createObjectURL(f);img.style.display='block'})}
+preview($('hand'),$('handPrev'));preview($('label'),$('labelPrev'));
+function notice(id,msg){$(id).textContent=msg;$(id).style.display='block';setTimeout(()=>$(id).style.display='none',3500)}
+function setActive(s){active=s;$('sessionStatus').innerHTML=s?'<strong>Transaksi aktif · '+esc(s.taker)+'</strong>Dibuka '+esc(s.openedAt)+' · '+s.scans.length+' label tersimpan.':'<strong>Belum ada transaksi terbuka</strong>Masukkan nama pengambil dan foto tangan untuk memulai.';$('scanArea').classList.toggle('hidden',!s);$('closedMsg').classList.toggle('hidden',!!s);$('closeSession').disabled=!s;renderCurrent()}
+function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+$('openSession').onclick=async()=>{let name=$('taker').value.trim(),f=$('hand').files[0];if(!name||!f){alert('Isi nama pengambil dan ambil foto tangan terlebih dahulu.');return}let btn=$('openSession');btn.disabled=true;try{active={uuid:crypto.randomUUID(),synced:false,taker:name,handPhoto:await fileData(f),openedAt:new Date().toLocaleString('id-ID'),closedAt:null,scans:[]};active.id=await put(active);syncQ(active);setActive(active);notice('openNotice','Transaksi berhasil dibuka. Sekarang foto label barang yang diambil.')}catch(e){alert('Tidak dapat menyimpan transaksi.')}finally{btn.disabled=false}};
+$('label').addEventListener('change',async()=>{const f=$('label').files[0];pendingPhoto=f?await fileData(f):null});
+$('saveLabel').onclick=async()=>{if(!active)return;let name=$('readName').value.trim(),qty=Number($('readQty').value);if(!pendingPhoto||!name||!Number.isInteger(qty)||qty<1){alert('Foto label, nama baso, dan jumlah PCS wajib lengkap.');return}active.scans.push({name,qty,photo:pendingPhoto,at:new Date().toLocaleString('id-ID')});active.synced=false;await put(active);syncQ(active);$('label').value='';$('labelPrev').style.display='none';$('readName').value='';$('readQty').value='';pendingPhoto=null;setActive(active);notice('scanNotice','Label berhasil disimpan ke transaksi. Silakan foto label berikutnya.')};
+$('closeSession').onclick=async()=>{if(!active)return;if(!confirm('Tutup transaksi ini? Setelah ditutup, transaksi tidak bisa ditambah label lagi.'))return;active.closedAt=new Date().toLocaleString('id-ID');active.synced=false;await put(active);syncQ(active);active=null;setActive(null);await renderStats();notice('openNotice','Transaksi telah ditutup dan masuk ke riwayat.')};
+function renderCurrent(){let el=$('currentScans');if(!active||!active.scans.length){el.className='empty';el.textContent='Belum ada label tersimpan.';return}el.className='';el.innerHTML='';active.scans.forEach((s,i)=>{let d=document.createElement('div');d.className='scan';let img=document.createElement('img');img.src=s.photo;let h=document.createElement('div');h.className='scan-head';let t=document.createElement('strong');t.textContent=(i+1)+'. '+s.name;let q=document.createElement('b');q.textContent=s.qty+' pcs';h.append(t,q);let sm=document.createElement('small');sm.textContent=s.at;d.append(h,img,sm);el.append(d)})}
+async function renderStats(){let all=await getAll(),closed=all.filter(x=>x.closedAt);$('statTransactions').textContent=all.length;$('statPieces').textContent=all.reduce((n,s)=>n+s.scans.reduce((a,x)=>a+Number(x.qty),0),0)+' pcs';let el=$('historyList');if(!closed.length){el.className='empty';el.textContent='Belum ada transaksi yang ditutup.';return}el.className='';el.innerHTML='';closed.forEach(s=>{let d=document.createElement('div');d.className='scan';let total=s.scans.reduce((n,x)=>n+Number(x.qty),0);let h=document.createElement('strong');h.textContent=s.taker+' · '+total+' pcs';let sm=document.createElement('small');sm.textContent='Dibuka '+s.openedAt+' · Ditutup '+s.closedAt+' · '+s.scans.length+' label';d.append(h,sm);s.scans.forEach(x=>{let p=document.createElement('div');p.style.fontSize='13px';p.style.marginTop='6px';p.textContent=x.name+' — '+x.qty+' pcs';d.append(p)});el.append(d)})}
+$('export').onclick=async()=>{let all=await getAll(),rows=[['Pengambil','Waktu buka','Waktu tutup','Nama baso','Jumlah PCS','Waktu foto label']];all.forEach(s=>s.scans.forEach(x=>rows.push([s.taker,s.openedAt,s.closedAt||'Masih terbuka',x.name,x.qty,x.at])));if(rows.length===1){alert('Belum ada data.');return}let csv=rows.map(r=>r.map(x=>'"'+String(x??'').replaceAll('"','""')+'"').join(',')).join('\n');let a=document.createElement('a'),u=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}));a.href=u;a.download='laporan-stokbasoku.csv';a.click();URL.revokeObjectURL(u)};
+document.querySelectorAll('.nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('.nav button').forEach(x=>x.classList.toggle('active',x===b));['home','masuk','closing','history','laporan','help'].forEach(p=>$('page-'+p).classList.toggle('hidden',p!==b.dataset.page));if(b.dataset.page==='history')renderStats();if(b.dataset.page==='closing')initClosing();if(b.dataset.page==='laporan'){report();auditList()}if(b.dataset.page==='masuk'){loadProds();inList()}});
+
+const WIB={timeZone:'Asia/Jakarta'},fd=t=>t?new Date(t).toLocaleString('id-ID',WIB):'-';
+let cl=null,sysRows=[],lastCheck=[],lastSum=null,dt;
+const has=v=>v!==''&&v!=null;
+async function loadProds(){const {data}=await sb.from('products').select('name').order('id');$('inProd').innerHTML=(data||[]).map(p=>'<option>'+esc(p.name)+'</option>').join('')}
+async function inList(){const {data}=await sb.from('stock_in').select('*').order('at',{ascending:false}).limit(15);const el=$('inList');if(!data||!data.length){el.className='empty';el.textContent='Belum ada barang masuk.';return}el.className='';el.innerHTML=data.map(x=>'<div class="rec">'+esc(x.product)+' · +'+x.qty+' pcs · '+esc(x.petugas)+' · '+fd(x.at)+'</div>').join('')}
+$('inSave').onclick=async()=>{const q=Number($('inQty').value),b=$('inBy').value.trim();if(!Number.isInteger(q)||q<1||!b){alert('Isi produk, jumlah, dan petugas.');return}const {error}=await sb.from('stock_in').insert({product:$('inProd').value,qty:q,petugas:b});if(error){alert('Gagal: '+error.message);return}audit('barang_masuk',{product:$('inProd').value,qty:q});$('inQty').value='';notice('inNotice','Barang masuk tersimpan.');inList()};
+async function sysStock(){
+ const {data:prods}=await sb.from('products').select('*').order('id');
+ const {data:last}=await sb.from('closings').select('closed_at,rows').eq('status','SELESAI').order('closed_at',{ascending:false}).limit(1);
+ const L=last&&last[0],since=L?L.closed_at:'1970-01-01T00:00:00Z';
+ const {data:ins}=await sb.from('stock_in').select('*').gt('at',since);
+ const {data:ses}=await sb.from('sessions').select('taker,scans').gt('created_at',since);
+ return prods.map(p=>{const lv=L&&L.rows&&L.rows[p.name];const base=lv&&has(lv.S)?Number(lv.S):p.stok_awal;
+  const M=(ins||[]).filter(x=>x.product===p.name).reduce((n,x)=>n+x.qty,0);let K=0;const rel=[];
+  (ses||[]).forEach(s=>(s.scans||[]).forEach(x=>{if(String(x.name).toLowerCase().includes(p.name.toLowerCase())){K+=Number(x.qty);rel.push(s.taker+' '+x.qty+' pcs ('+x.at+')')}}));
+  return {name:p.name,base,M,K,sys:base+M-K,rel}})}
+function grid(){const r=cl.rows||{};$('clGrid').innerHTML='<table><tr><th>Produk</th><th>M</th><th>K</th><th>S</th><th>Cat.</th></tr>'+sysRows.map((p,i)=>{const v=r[p.name]||{};return '<tr><td>'+esc(p.name)+'</td>'+['M','K','S'].map(k=>'<td><input type="number" min="0" inputmode="numeric" data-p="'+i+'" data-k="'+k+'" value="'+esc(v[k]??'')+'"></td>').join('')+'<td><input type="text" data-p="'+i+'" data-k="note" value="'+esc(v.note||'')+'"></td></tr>'}).join('')+'</table>'}
+function collect(){const o={};document.querySelectorAll('#clGrid input').forEach(i=>{const n=sysRows[i.dataset.p].name;(o[n]=o[n]||{})[i.dataset.k]=i.value});cl.rows=o}
+async function saveDraft(){if(!cl)return;collect();await sb.from('closings').update({rows:cl.rows}).eq('id',cl.id)}
+$('clGrid').addEventListener('input',()=>{clearTimeout(dt);dt=setTimeout(saveDraft,800)});
+$('clDraft').onclick=async()=>{await saveDraft();alert('Draft tersimpan.')};
+function check(){collect();let ok=0,diff=0,tot=0;
+ lastCheck=sysRows.map(p=>{const v=cl.rows[p.name]||{},s=has(v.S)?Number(v.S):null,cor=(cl.corrections||[]).find(c=>c.product===p.name);let d=null,st;
+  if(s===null)st='PERLU DIPERIKSA';else{d=s-p.sys;if(d===0){st='SESUAI';ok++}else{diff++;tot+=d;st=cor?'DIKOREKSI':'TERDAPAT SELISIH'}}
+  let rec='';if(d)rec='Stok '+p.name+' berbeda '+Math.abs(d)+' PCS dari sistem (awal '+p.base+' + masuk '+p.M+' − keluar '+p.K+' = '+p.sys+'). Periksa transaksi keluar dan hitungan fisik. '+(p.rel.length?'Transaksi terkait: '+p.rel.join('; ')+'.':'Belum ada transaksi keluar tercatat untuk produk ini.');
+  if(has(v.M)&&Number(v.M)!==p.M)rec+=' M manual ('+v.M+') ≠ barang masuk tercatat ('+p.M+').';
+  if(has(v.K)&&Number(v.K)!==p.K)rec+=' K manual ('+v.K+') ≠ barang keluar tercatat ('+p.K+').';
+  return {p,s,d,st,cor,rec}});
+ const blank=lastCheck.some(r=>r.st==='PERLU DIPERIKSA');
+ lastSum={ok,diff,tot,rows:lastCheck.map(r=>({name:r.p.name,sys:r.p.sys,S:r.s,d:r.d,st:r.st}))};
+ $('clResult').innerHTML='<table style="margin-top:12px"><tr><th>Produk</th><th>Sistem</th><th>Fisik</th><th>Selisih</th><th>Status</th></tr>'+lastCheck.map(r=>'<tr><td>'+esc(r.p.name)+'</td><td>'+r.p.sys+'</td><td>'+(r.s??'?')+'</td><td>'+(r.d??'-')+'</td><td>'+r.st+'</td></tr>').join('')+'</table><p class="hint">Sesuai: '+ok+' · Ada selisih: '+diff+' · Total selisih: '+tot+(blank?' · Isi kolom S yang masih kosong.':'')+'</p>'+lastCheck.map((r,i)=>r.rec?'<div class="rec">'+esc(r.rec)+(r.d&&!r.cor?' <button class="secondary" onclick="koreksi('+i+')">Konfirmasi koreksi</button>':'')+(r.cor?' <b>Dikoreksi oleh '+esc(r.cor.approved_by)+': '+esc(r.cor.reason)+'</b>':'')+'</div>':'').join('');
+ $('clFinish').classList.toggle('hidden',blank)}
+$('clCheck').onclick=async()=>{sysRows=await sysStock();check()};
+window.koreksi=async i=>{const r=lastCheck[i];const reason=prompt('Alasan koreksi '+r.p.name+':');if(!reason)return;const by=prompt('Nama yang menyetujui:');if(!by)return;cl.corrections=(cl.corrections||[]).concat({product:r.p.name,from_system:r.p.sys,to_physical:r.s,diff:r.d,reason,approved_by:by,at:new Date().toISOString()});await sb.from('closings').update({corrections:cl.corrections}).eq('id',cl.id);audit('koreksi',{no:cl.no,product:r.p.name,reason,approved_by:by});check()};
+$('clFinish').onclick=async()=>{if(!confirm('Selesaikan Closing? Setelah selesai data terkunci.'))return;check();const {error}=await sb.from('closings').update({rows:cl.rows,status:'SELESAI',summary:lastSum}).eq('id',cl.id);if(error){alert('Gagal: '+error.message);return}audit('selesai_closing',{no:cl.no});cl=null;initClosing()};
+async function showWork(){sysRows=await sysStock();$('clStart').classList.add('hidden');$('clWork').classList.remove('hidden');$('clHead').innerHTML='<strong>CLOSING AKTIF · '+esc(cl.no)+'</strong>'+esc(cl.petugas)+' · dibuka '+fd(cl.opened_at);grid();check()}
+$('clOpen').onclick=async()=>{const n=$('clName').value.trim(),f=$('clHand').files[0];if(!n||!f){alert('Isi nama petugas dan foto tangan terlebih dahulu.');return}
+ try{const id=crypto.randomUUID(),url=await up('closing/'+id+'/tangan',await fileData(f)),no='CL-'+new Date().toLocaleDateString('sv-SE',WIB).replaceAll('-','')+'-'+id.slice(0,4).toUpperCase();
+ const {data,error}=await sb.from('closings').insert({id,no,petugas:n,hand_photo:url,status:'AKTIF'}).select().single();if(error)throw error;cl=data;audit('buka_closing',{no:data.no});await showWork();hist()}catch(e){alert('Gagal membuka Closing (perlu internet): '+(e.message||e))}};
+async function hist(){const {data}=await sb.from('closings').select('*').order('created_at',{ascending:false}).limit(50);const el=$('clHist');if(!data||!data.length){el.className='empty';el.textContent='Belum ada Closing.';$('clStats').textContent='';return}
+ const today=new Date().toLocaleDateString('sv-SE',WIB);$('clStats').textContent='Hari ini: '+data.filter(c=>new Date(c.opened_at).toLocaleDateString('sv-SE',WIB)===today).length+' · Berjalan: '+data.filter(c=>c.status==='AKTIF').length+' · Selesai: '+data.filter(c=>c.status==='SELESAI').length+' · Dengan selisih: '+data.filter(c=>c.summary&&c.summary.diff>0).length;
+ el.className='';el.innerHTML='';data.forEach(c=>{const sm=c.summary,d=document.createElement('div');d.className='scan';d.innerHTML='<strong>'+esc(c.no)+' · '+esc(c.status)+'</strong><br><small>'+esc(c.petugas)+' · '+fd(c.opened_at)+' → '+fd(c.closed_at)+(sm?' · '+sm.diff+' selisih / '+sm.rows.length+' produk':'')+'</small><details><summary>Lihat detail</summary><img src="'+esc(c.hand_photo)+'" alt="Foto tangan">'+(sm?'<table><tr><th>Produk</th><th>Sistem</th><th>Fisik</th><th>Selisih</th></tr>'+sm.rows.map(r=>'<tr><td>'+esc(r.name)+'</td><td>'+r.sys+'</td><td>'+r.S+'</td><td>'+r.d+'</td></tr>').join('')+'</table>':'')+((c.corrections||[]).map(x=>'<div class="rec">Koreksi '+esc(x.product)+' ('+x.from_system+' → '+x.to_physical+'): '+esc(x.reason)+' · disetujui '+esc(x.approved_by)+' · '+fd(x.at)+'</div>').join(''))+(c.reopens||[]).map(x=>'<div class="rec">Dibuka kembali oleh '+esc(x.by)+': '+esc(x.reason)+' · '+fd(x.at)+'</div>').join('')+(c.photos||[]).map(u=>'<img src="'+esc(u)+'" alt="Foto tabel">').join('')+(me.role==='admin'&&c.status==='SELESAI'?'<button class="danger" onclick="reopen(\''+c.id+'\')">Buka kembali (admin)</button>':'')+'</details>';el.append(d)})}
+async function initClosing(){if(!sb){alert('Koneksi cloud tidak tersedia.');return}try{if(!cl){const {data}=await sb.from('closings').select('*').eq('status','AKTIF').order('created_at',{ascending:false}).limit(1);if(data&&data[0]){cl=data[0];await showWork()}else{$('clStart').classList.remove('hidden');$('clWork').classList.add('hidden')}}await hist()}catch(e){alert('Gagal memuat Closing: '+(e.message||e))}}
+
+let me={role:'petugas'},repRows=[];
+function audit(a,d){if(sb)sb.from('audit_log').insert({action:a,detail:d}).then(()=>{})}
+async function onAuth(sess){const {data}=await sb.from('profiles').select('nama,role').eq('id',sess.user.id).single();me={email:sess.user.email,nama:data?data.nama:sess.user.email,role:data?data.role:'petugas'};$('login').style.display='none';$('who').textContent=me.email+' ('+me.role+')';document.querySelectorAll('.adm').forEach(e=>e.classList.toggle('hidden',me.role!=='admin'));resync()}
+async function authInit(){if(!sb)return;const {data}=await sb.auth.getSession();if(data.session)await onAuth(data.session)}
+
+
+window.reopen=async id=>{const reason=prompt('Alasan membuka kembali Closing:');if(!reason)return;const {data:c}=await sb.from('closings').select('reopens').eq('id',id).single();const {error}=await sb.from('closings').update({status:'AKTIF',reopens:(c.reopens||[]).concat({reason,by:me.email,at:new Date().toISOString()})}).eq('id',id);if(error){alert('Gagal: '+error.message);return}audit('buka_kembali',{id,reason});cl=null;initClosing()};
+async function auditList(){if(me.role!=='admin')return;const {data}=await sb.from('audit_log').select('*').order('at',{ascending:false}).limit(30);const el=$('auList');if(!data||!data.length){el.textContent='Belum ada catatan.';return}el.className='';el.innerHTML=data.map(x=>'<div class="rec">'+fd(x.at)+' · '+esc(x.by_email)+' · <b>'+esc(x.action)+'</b> '+esc(JSON.stringify(x.detail||{}))+'</div>').join('')}
+$('clOcr').onclick=async()=>{const f=$('clTable').files[0];if(!f){alert('Pilih foto tabel dulu.');return}if(!window.Tesseract){alert('OCR tidak termuat. Periksa internet.');return}const b=$('clOcr');b.disabled=true;$('clOcrSt').textContent='Membaca tabel…';try{const r=await Tesseract.recognize(f,'ind+eng');collect();const rows=cl.rows;let hit=0;r.data.text.split(/\r?\n/).forEach(l=>{const low=l.toLowerCase(),p=sysRows.find(x=>low.includes(x.name.toLowerCase()));if(!p)return;const n=low.replace(p.name.toLowerCase(),'').match(/\d+/g)||[],v=rows[p.name]=rows[p.name]||{};if(n.length===3){v.M=n[0];v.K=n[1];v.S=n[2];v.note='[OCR] periksa'}else{v.note='PERLU DIPERIKSA: '+(n.join(',')||'tidak terbaca')}hit++});const url=await up('closing/'+cl.id+'/tabel-'+Date.now(),await fileData(f));cl.photos=(cl.photos||[]).concat(url);await sb.from('closings').update({photos:cl.photos,rows}).eq('id',cl.id);grid();check();$('clOcrSt').textContent=hit+' baris produk terbaca. Periksa semua angka sebelum menyelesaikan.'}catch(e){$('clOcrSt').textContent='Gagal membaca tabel.'}b.disabled=false};
+async function report(){try{const from=new Date(Date.now()-Number($('rpPer').value)*864e5).toISOString();const [{data:pr},{data:ins},{data:ses},{data:cs}]=await Promise.all([sb.from('products').select('name').order('id'),sb.from('stock_in').select('product,qty').gt('at',from),sb.from('sessions').select('scans').gt('created_at',from),sb.from('closings').select('petugas,summary,closed_at').eq('status','SELESAI').gt('closed_at',from).order('closed_at',{ascending:false})]);
+ repRows=[['Produk','Masuk','Keluar','Stok sistem','Stok fisik','Selisih']];
+ (pr||[]).forEach(p=>{const m=(ins||[]).filter(x=>x.product===p.name).reduce((n,x)=>n+x.qty,0);let k=0,sel=0,lr=null;(ses||[]).forEach(q=>(q.scans||[]).forEach(x=>{if(String(x.name).toLowerCase().includes(p.name.toLowerCase()))k+=Number(x.qty)}));(cs||[]).forEach(c=>{const r=c.summary&&c.summary.rows.find(y=>y.name===p.name);if(r){if(!lr)lr=r;sel+=r.d||0}});repRows.push([p.name,m,k,lr?lr.sys:'-',lr&&lr.S!=null?lr.S:'-',sel])});
+ repRows.push([],['Petugas','Jumlah Closing','Total selisih (abs)']);const pt={};(cs||[]).forEach(c=>{const o=pt[c.petugas]=pt[c.petugas]||[0,0];o[0]++;o[1]+=c.summary?c.summary.rows.reduce((n,r)=>n+Math.abs(r.d||0),0):0});Object.entries(pt).forEach(([n,v])=>repRows.push([n,v[0],v[1]]));
+ $('rpOut').innerHTML='<p class="hint">Periode: '+fd(from)+' – '+fd(new Date())+' (Closing selesai)</p><table>'+repRows.map((r,i)=>{const t=i===0||r[0]==='Petugas'?'th':'td';return '<tr>'+r.map(x=>'<'+t+'>'+esc(x)+'</'+t+'>').join('')+'</tr>'}).join('')+'</table>'}catch(e){$('rpOut').textContent='Gagal memuat laporan.'}}
+$('rpRun').onclick=report;$('rpPer').onchange=report;
+function dl(n,m,t){const a=document.createElement('a'),u=URL.createObjectURL(new Blob(['\ufeff'+t],{type:m}));a.href=u;a.download=n;a.click();URL.revokeObjectURL(u)}
+$('rpCsv').onclick=()=>repRows.length?dl('laporan-stokbasoku.csv','text/csv;charset=utf-8',repRows.map(r=>r.map(x=>'"'+String(x??'').replaceAll('"','""')+'"').join(',')).join('\n')):alert('Tampilkan laporan dulu.');
+$('rpXls').onclick=()=>repRows.length?dl('laporan-stokbasoku.xls','application/vnd.ms-excel','<table border="1">'+repRows.map(r=>'<tr>'+r.map(x=>'<td>'+esc(x)+'</td>').join('')+'</tr>').join('')+'</table>'):alert('Tampilkan laporan dulu.');
+$('rpPdf').onclick=()=>window.print();
+$('asGo').onclick=async()=>{const q=$('asQ').value.toLowerCase().trim(),out=$('asA');if(!q)return;out.textContent='Memeriksa data…';try{
+ const {data:cs}=await sb.from('closings').select('no,petugas,opened_at,summary').order('created_at',{ascending:false}).limit(20),done=(cs||[]).filter(c=>c.summary),last=done[0];
+ const {data:prods}=await sb.from('products').select('name'),pr=(prods||[]).find(p=>q.includes(p.name.toLowerCase()));
+ const today=new Date().toLocaleDateString('sv-SE',WIB);let a='';
+ if(pr){const {data:ins}=await sb.from('stock_in').select('qty,at').eq('product',pr.name).order('at',{ascending:false}).limit(5),lr=last&&last.summary.rows.find(r=>r.name===pr.name);a='Riwayat '+pr.name+': '+(lr?'Closing terakhir '+last.no+' → sistem '+lr.sys+', fisik '+lr.S+', selisih '+lr.d+'. ':'belum ada Closing selesai. ')+(ins&&ins.length?'Barang masuk terakhir: '+ins.map(x=>x.qty+' pcs ('+fd(x.at)+')').join('; ')+'.':'Belum ada barang masuk tercatat.')}
+ else if(/selisih|belum sesuai|tidak sesuai/.test(q)){if(!last)a='Data belum tersedia: belum ada Closing yang selesai.';else{const b=last.summary.rows.filter(r=>r.d);a=b.length?'Closing '+last.no+', produk dengan selisih: '+b.map(r=>r.name+' ('+r.d+')').join(', ')+'.':'Closing '+last.no+': semua produk sesuai.'}}
+ else if(/keluar/.test(q)){const {data:se}=await sb.from('sessions').select('scans').gte('created_at',new Date(today+'T00:00:00+07:00').toISOString());a='Total barang keluar hari ini: '+(se||[]).reduce((n,x)=>n+(x.scans||[]).reduce((m,y)=>m+Number(y.qty),0),0)+' pcs (dari transaksi pengambilan tercatat).'}
+ else if(/petugas/.test(q)){const t=(cs||[]).filter(c=>new Date(c.opened_at).toLocaleDateString('sv-SE',WIB)===today);a=t.length?'Petugas Closing hari ini: '+t.map(c=>c.petugas+' ('+c.no+')').join(', ')+'.':'Belum ada Closing hari ini.'}
+ else if(/bandingkan|kemarin/.test(q)){if(done.length<2)a='Data belum cukup: perlu minimal dua Closing selesai.';else{const t=c=>c.summary.rows.reduce((n,r)=>n+(r.d||0),0);a='Closing '+done[0].no+': total selisih '+t(done[0])+' ('+done[0].summary.diff+' produk). Sebelumnya '+done[1].no+': total selisih '+t(done[1])+' ('+done[1].summary.diff+' produk).'}}
+ else if(/stok|fisik/.test(q)){a=last?'Stok fisik terakhir ('+last.no+'): '+last.summary.rows.map(r=>r.name+' '+r.S).join(', ')+'.':'Data belum tersedia: belum ada Closing yang selesai.'}
+ else a='Saya bisa menjawab: stok fisik terakhir, produk yang selisih, petugas Closing hari ini, total barang keluar, riwayat produk (sebut nama produk), dan perbandingan Closing.';
+ out.textContent=a}catch(e){out.textContent='Gagal membaca data.'}};
+me={role:'admin',email:'',nama:'Petugas'};if(sb)sb.from('products').select('name').order('id').then(({data})=>{$('prodList').innerHTML=(data||[]).map(p=>'<option value="'+esc(p.name)+'">').join('')});document.querySelectorAll('.adm').forEach(e=>e.classList.remove('hidden'));
+openDB().then(async()=>{await renderStats();setActive(null);resync()}).catch(()=>alert('Penyimpanan browser tidak tersedia. Gunakan Chrome versi terbaru.'));
+</script>
+</body></html>
